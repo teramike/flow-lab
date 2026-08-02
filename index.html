@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%238F70EB'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300;1,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js"></script>
+</head>
+
+<body>
+
+<!-- ============================================================
+     STAGE
+     ============================================================ -->
+<div class="stage">
+  <div class="brand">
+    <span class="dot"></span>
+    Flow Lab
+    <a class="small byline" id="byline" href="https://x.com/teramike_" target="_blank" rel="noopener">by @teramike_</a>
+  </div>
+
+  <div class="stage-shell" id="stage-shell">
+    <canvas id="shader-canvas"></canvas>
+    <svg id="stage-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="guides" id="guides">
+      <div class="line v dim" style="left:33.33%"></div>
+      <div class="line v dim" style="left:66.66%"></div>
+      <div class="line h dim" style="top:33.33%"></div>
+      <div class="line h dim" style="top:66.66%"></div>
+      <div class="line v" id="g-vc" style="left:50%"></div>
+      <div class="line h" id="g-hc" style="top:50%"></div>
+      <div class="label" id="g-lbl" style="left:50%;top:50%">center</div>
+    </div>
+    <div class="blob-handles-layer" id="blob-handles"></div>
+  </div>
+
+  <div class="stage-meta">
+    <span><b id="meta-dim">1600×900</b></span>
+    <span><b id="meta-time">0.0s</b></span>
+    <span>scene <b id="meta-scene">liquid</b></span>
+    <span>seed <b id="meta-seed">classic</b></span>
+  </div>
+
+  <div class="variations" id="variations" hidden>
+    <div class="var-head">
+      <span>variations — click one to adopt it</span>
+      <span class="var-actions">
+        <button id="var-again">↻ riff again</button>
+        <button id="var-close">×</button>
+      </span>
+    </div>
+    <div class="var-strip" id="var-strip"></div>
+  </div>
+
+  <div class="actionbar">
+    <button class="primary" id="btn-shuffle">⚂ Shuffle <span class="key">R</span></button>
+    <button id="btn-variations">Variations <span class="key">V</span></button>
+    <div class="sep"></div>
+    <button id="btn-play">▶ Play</button>
+    <div class="sep"></div>
+    <button id="btn-png">PNG</button>
+    <button id="btn-bg-only">BG only</button>
+    <button id="btn-video">Video</button>
+    <button id="btn-code">Embed</button>
+    <div class="sep"></div>
+    <button id="btn-save">Save <span class="key">S</span></button>
+  </div>
+
+  <div class="history" id="history"></div>
+</div>
+
+<!-- ============================================================
+     CONTROLS
+     ============================================================ -->
+<div class="controls">
+  <div class="controls-head">
+    <h1>Flow Lab</h1>
+    <div class="sub">organic backgrounds, made in your browser</div>
+  </div>
+  <div class="panel-scroll" id="panel-root"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- video export modal -->
+<div class="modal-backdrop" id="video-modal" hidden>
+  <div class="modal">
+    <h2>Export seamless-loop video</h2>
+    <label>Size
+      <select id="vm-preset">
+        <option value="1920x1080">1920 × 1080 — HD hero (16:9)</option>
+        <option value="2560x1440">2560 × 1440 — QHD retina</option>
+        <option value="3840x2160">3840 × 2160 — 4K</option>
+        <option value="1080x1920">1080 × 1920 — mobile hero (9:16)</option>
+        <option value="1080x1080">1080 × 1080 — square (1:1)</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </label>
+    <div class="row-2" id="vm-custom-row" hidden>
+      <label>Width <input id="vm-w" type="number" min="16" max="7680" step="2" value="1920"></label>
+      <label>Height <input id="vm-h" type="number" min="16" max="7680" step="2" value="1080"></label>
+    </div>
+    <label>Duration (seconds)
+      <input id="vm-dur" type="number" min="1" max="120" step="1" value="15">
+    </label>
+    <label>Frame rate
+      <select id="vm-fps">
+        <option value="30">30 fps — smaller file</option>
+        <option value="60" selected>60 fps — standard</option>
+        <option value="120">120 fps — slow-mo 2× in post</option>
+      </select>
+    </label>
+    <label>Quality
+      <select id="vm-quality">
+        <option value="standard">Standard — ~0.12 bpp</option>
+        <option value="high" selected>High — ~0.22 bpp</option>
+        <option value="max">Max — ~0.38 bpp (huge files)</option>
+      </select>
+    </label>
+    <p class="hint">Phase-locked to loop seamlessly at exactly this duration. Uses the fast frame-exact encoder when available (no realtime wait), else records in realtime. Videos export the background only — no overlay.</p>
+    <div class="modal-actions">
+      <button id="vm-cancel">Cancel</button>
+      <button class="primary" id="vm-record">Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- export progress -->
+<div class="modal-backdrop" id="export-progress" hidden>
+  <div class="modal progress-modal">
+    <h2 id="ep-label">Encoding…</h2>
+    <div class="progress-track"><div class="progress-bar" id="ep-bar"></div></div>
+    <div class="progress-note" id="ep-note"></div>
+    <div class="modal-actions">
+      <button id="ep-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/shader.js"></script>
+<script src="js/state.js"></script>
+<script src="js/render.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/exports.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
