@@ -752,3 +752,90 @@ input[type=text]:focus, input[type=number]:focus, select:focus, textarea:focus {
   margin-bottom: 14px;
   min-height: 14px;
 }
+
+/* ============================================================
+   NARROW SCREENS
+
+   Everything above assumes two columns exactly one viewport tall:
+   stage on the left, a 380px panel on the right, nothing scrolls,
+   and the action bar and history strip float over the stage
+   because a full-height stage has room to spare underneath.
+
+   A phone has none of that. At 390px the fixed panel leaves the
+   stage 10px, its min-content pushes the panel off the right edge,
+   and both end up clipped: the scene cards lose their labels and
+   the palette strips run off the screen.
+
+   Below 860px the two columns become one, the page scrolls like a
+   page, and the chrome that floats on a desktop drops into the flow
+   under the stage it belongs to. No JS changes: the shader reads the
+   SVG's box every resize and sizes itself to whatever it finds.
+   ============================================================ */
+@media (max-width: 860px) {
+  html, body {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+  body {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .stage {
+    padding: 52px 12px 18px;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+  .brand { top: 16px; left: 16px; font-size: 17px; }
+
+  /* the stage fills the width it is given, rather than shrink-wrapping
+     a canvas that was sized against a desktop viewport */
+  .stage-shell { width: 100%; padding: 10px; border-radius: 14px; }
+  #shader-canvas { top: 10px; left: 10px; }
+  #stage-svg {
+    width: 100%;
+    max-width: 100%;
+    /* landscape only: portrait never reaches it at 16:9 */
+    max-height: 52vh;
+  }
+
+  .stage-meta {
+    gap: 14px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* down from floating to standing in line */
+  .actionbar,
+  .history,
+  .variations {
+    position: static;
+    transform: none;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+  .actionbar {
+    margin-top: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 18px;
+  }
+  .actionbar .sep { display: none; }
+  .history { margin-top: 10px; }
+  .variations { margin-top: 14px; }
+
+  /* the panel stops being a column with its own scrollbar and becomes
+     the rest of the page */
+  .controls {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    overflow: visible;
+  }
+  .panel-scroll {
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+}
